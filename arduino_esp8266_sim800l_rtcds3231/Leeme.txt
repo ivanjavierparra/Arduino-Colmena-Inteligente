@@ -1,0 +1,3 @@
+La única diferencia que hay entre los dos sketch es que la v2
+tiene el código más ordenado, al pasar código a funciones con nombre.
+

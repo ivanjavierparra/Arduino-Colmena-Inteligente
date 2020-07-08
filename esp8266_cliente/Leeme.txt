@@ -1,0 +1,3 @@
+nodo_cliente: usa librería HTTPClient y envía datos por GET al Nodo Servidor.
+nodo_cliente_2: usa librería HTTPClient y envía datos por POST al Nodo Servidor.
+sketch_esp8266_cliente_post_2: usa librería WifiClient y envía datos por POST al Nodo Servidor.

@@ -38,6 +38,9 @@ DHT dht11(DHTPIN, DHTTYPE);
 /* Definimos el BAUD_RATE: */
 #define BAUD_RATE 9600
 
+unsigned long previousMillis = 0;        // will store last time LED was updated
+const long interval = 1000 * 60 * 2;           // interval at which to blink (milliseconds)
+
 
 //=======================================================================
 //                    Power on setup
@@ -50,23 +53,6 @@ void setup() {
   delay(1000);
   WiFi.mode(WIFI_STA);        //This line hides the viewing of ESP as wifi hotspot
   
-  WiFi.begin(ssid, password);     //Connect to your WiFi router
-  Serial.println("");
-
-  Serial.print("Connecting");
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  //If connection successful show IP address in serial monitor
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());  //IP address assigned to your ESP
-
   // Comenzamos el sensor DHT
   dht11.begin();
 }
@@ -75,41 +61,85 @@ void setup() {
 //                    Main Program Loop
 //=======================================================================
 void loop() {
-  // Esperamos 5 segundos entre medidas
-  delay(5000);
 
-  // Leemos la humedad relativa
-  float h = dht11.readHumidity();
-  // Leemos la temperatura en grados centígrados (por defecto)
-  float t = dht11.readTemperature();
 
-  // Comprobamos si ha habido algún error en la lectura
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Error obteniendo los datos del sensor DHT11");   
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) { 
+
+        // save the last time you blinked the LED
+        previousMillis = currentMillis;
+        
+
+        // Leemos la humedad relativa
+        float h = dht11.readHumidity();
+        // Leemos la temperatura en grados centígrados (por defecto)
+        float t = dht11.readTemperature();
+      
+        // Comprobamos si ha habido algún error en la lectura
+        if (isnan(h) || isnan(t)) {
+          Serial.println("Error obteniendo los datos del sensor DHT11");   
+        }
+      
+        //Connect to your WiFi router
+        WiFi.begin(ssid, password);    
+        Serial.println("");
+      
+        Serial.print("Iniciado conexión con el Nodo Servidor");
+        // Wait for connection
+        while (WiFi.status() != WL_CONNECTED) {
+          delay(500);
+          Serial.print(".");
+        }
+      
+        //If connection successful show IP address in serial monitor
+        Serial.println("");
+        Serial.print("Conectado a ");
+        Serial.println(ssid);
+        Serial.print("Direccion IP: ");
+        Serial.println(WiFi.localIP());  //IP address assigned to your ESP
+      
+      
+      
+        
+        
+        HTTPClient http;    //Declare object of class HTTPClient
+      
+        String apiario, colmena, temperatura, humedad, postData;
+        apiario = "1";
+        colmena = "6";
+        temperatura = String(t);
+        humedad = String(h);
+      
+        // Query Parameters a enviar por GET
+        postData = "Apiario=" + apiario + "&Colmena=" + colmena + "&Temperatura=" + temperatura + "&Humedad=" + humedad;
+            
+        http.begin("http://192.168.4.1:80/datos?" + postData); // Inicio la conexión          
+        http.addHeader("Content-Type", "text/html"); // Specify content-type header  
+      
+        int httpCode = http.GET();   // Send the request: also we can do http.POST(postData)
+      
+        if( httpCode > 0 ) {
+          Serial.println("Peticion GET exitosa.");
+          //if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+            Serial.println(httpCode);
+            String payload = http.getString();  // Obtener respuesta
+            Serial.println(payload);  // Mostrar respuesta por serial
+          //}
+          
+        }
+        else {
+          Serial.println("Peticion GET fallida.");
+        }
+            
+             
+        
+        http.end();  //Close connection
+      
+        WiFi.disconnect(true);
+
   }
   
-  HTTPClient http;    //Declare object of class HTTPClient
-
-  String apiario, colmena, temperatura, humedad, postData;
-  apiario = "1";
-  colmena = "14";
-  temperatura = String(t);
-  humedad = String(h);
-
-  // Query Parameters a enviar por GET
-  postData = "Apiario=" + apiario + "&Colmena=" + colmena + "&Temperatura=" + temperatura + "&Humedad=" + humedad;
-       
-  http.begin("http://192.168.4.1:80/datos?" + postData); // Specify request destination and the query parameters 
-  http.addHeader("Content-Type", "text/html"); // Specify content-type header
-
-  int httpCode = http.GET();   // Send the request: also we can do http.POST(postData)
-  String payload = http.getString();    // Get the response payload
-
-  Serial.println(httpCode);   //Print HTTP return code
-  Serial.println(payload);    //Print request response payload
-
-  http.end();  //Close connection
   
-  delay(5000);  //Post Data at every 5 seconds
 }
 //=======================================================================

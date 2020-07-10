@@ -47,18 +47,17 @@ void setup() {
   server.begin();                         //inicializamos el servidor
   WiFi.mode(WIFI_AP);
   //WiFi.softAP(ssid, password);            //Red con clave, en el canal 1 y visible
-  WiFi.softAP(ssid, password, 1, 0, 8);     //  Nombre, clave, canal, is_nombre_visible, cantidad maxima de conexiones simultaneas (maximo 8). 
+  WiFi.softAP(ssid, password, 1, 0, 1);     //  Nombre, clave, canal, is_nombre_visible, cantidad maxima de conexiones simultaneas (maximo 8). 
   Serial.println();
-  Serial.print("Direccion IP Access Point - por defecto: ");      //Imprime la dirección IP
+  Serial.print("Direccion IP del Nodo Servidor: ");      //Imprime la dirección IP
   Serial.println(WiFi.softAPIP()); 
-  Serial.print("Direccion MAC Access Point: ");                   //Imprime la dirección MAC
+  Serial.print("Direccion MAC del Nodo Servidor: ");                   //Imprime la dirección MAC
   Serial.println(WiFi.softAPmacAddress()); 
   //server.on("/datos",HTTP_GET, webpage);
   server.on("/datos",HTTP_GET, response);
   server.on("/datos",HTTP_POST,response);
   Serial.println();
-  Serial.println("HTTP server started");
-  // Probando rama develop
+  Serial.println("Nodo Servidor Activo.");
 }
 
 void loop() {

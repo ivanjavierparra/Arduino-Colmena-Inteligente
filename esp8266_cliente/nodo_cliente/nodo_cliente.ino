@@ -1,5 +1,5 @@
 /*
- * Este sketch representa a un Nodo Xliente: ESP8266 + DHT11.
+ * Este sketch representa a un Nodo Colmena: ESP8266 + DHT11.
  * Lo que hace es leer datos de Temperatura y Humedad cada cierto tiempo y los envía, 
  * junto a su identificación (Número de Apiario y Número de Colmena), 
  * al Nodo Servidor como parámetros de una petición HTTP GET. 
@@ -85,59 +85,64 @@ void loop() {
         WiFi.begin(ssid, password);    
         Serial.println("");
       
-        Serial.print("Iniciado conexión con el Nodo Servidor");
+        Serial.print("Iniciando conexión con el Nodo Servidor");
         // Wait for connection
-        while (WiFi.status() != WL_CONNECTED) {
+        uint8_t i = 0;
+        while (WiFi.status() != WL_CONNECTED && i++ < 20 ) { //wait 10 seconds
           delay(500);
           Serial.print(".");
         }
+
+        // Si pasaron más de 10 segundos, considero inválidos los datos.
+        if (i == 21) {
+          Serial.print("Could not connect to Server Node.");
+        }
+        else{
+           
+          //If connection successful show IP address in serial monitor
+          Serial.println("");
+          Serial.print("Conectado a ");
+          Serial.println(ssid);
+          Serial.print("Direccion IP: ");
+          Serial.println(WiFi.localIP());  //IP address assigned to your ESP
       
-        //If connection successful show IP address in serial monitor
-        Serial.println("");
-        Serial.print("Conectado a ");
-        Serial.println(ssid);
-        Serial.print("Direccion IP: ");
-        Serial.println(WiFi.localIP());  //IP address assigned to your ESP
-      
-      
-      
+    
+          //Declare object of class HTTPClient
+          HTTPClient http;    
         
+          String apiario, colmena, temperatura, humedad, postData;
+          apiario = "1";
+          colmena = "6";
+          temperatura = String(t);
+          humedad = String(h);
+      
+          // Query Parameters a enviar por GET
+          postData = "Apiario=" + apiario + "&Colmena=" + colmena + "&Temperatura=" + temperatura + "&Humedad=" + humedad;
+              
+          http.begin("http://192.168.4.1:80/datos?" + postData); // Inicio la conexión          
+          http.addHeader("Content-Type", "text/html"); // Specify content-type header  
         
-        HTTPClient http;    //Declare object of class HTTPClient
-      
-        String apiario, colmena, temperatura, humedad, postData;
-        apiario = "1";
-        colmena = "6";
-        temperatura = String(t);
-        humedad = String(h);
-      
-        // Query Parameters a enviar por GET
-        postData = "Apiario=" + apiario + "&Colmena=" + colmena + "&Temperatura=" + temperatura + "&Humedad=" + humedad;
+          int httpCode = http.GET();   // Send the request: also we can do http.POST(postData)
+        
+          if( httpCode > 0 ) {
+            Serial.println("Peticion GET exitosa.");
+            //if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+              Serial.println(httpCode);
+              String payload = http.getString();  // Obtener respuesta
+              Serial.println(payload);  // Mostrar respuesta por serial
+            //}
             
-        http.begin("http://192.168.4.1:80/datos?" + postData); // Inicio la conexión          
-        http.addHeader("Content-Type", "text/html"); // Specify content-type header  
-      
-        int httpCode = http.GET();   // Send the request: also we can do http.POST(postData)
-      
-        if( httpCode > 0 ) {
-          Serial.println("Peticion GET exitosa.");
-          //if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
-            Serial.println(httpCode);
-            String payload = http.getString();  // Obtener respuesta
-            Serial.println(payload);  // Mostrar respuesta por serial
-          //}
-          
-        }
-        else {
-          Serial.println("Peticion GET fallida.");
-        }
+          }
+          else {
+            Serial.println("Peticion GET fallida.");
+          }
             
              
+          http.end();  //Close connection HTTP
         
-        http.end();  //Close connection
-      
-        WiFi.disconnect(true);
-
+          WiFi.disconnect(true); // Disconnect from Access Point
+          
+        }
   }
   
   

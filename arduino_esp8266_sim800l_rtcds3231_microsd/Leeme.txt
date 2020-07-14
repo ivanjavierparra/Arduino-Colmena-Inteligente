@@ -1,0 +1,5 @@
+sketch_completo_opcion_1: version para Arduino UNO que imprime datos por Monitor Serial.
+sketch_completo_opcion_2: version para Arduino UNO optimizado, que saca todos los Serial.
+sketch_completo_opcion_3: version para Arduino MEGA que imprime datos por Monitor Serial.
+
+Actualmente estoy usando sketch_completo_opcion_3.

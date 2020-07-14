@@ -20,9 +20,9 @@
 #include <RTClib.h>   // incluye libreria para el manejo del modulo RTC
 #include <SPI.h>    // incluye libreria interfaz SPI
 #include <SD.h>     // incluye libreria para tarjetas SD
-#define SSpin 10    // Slave Select en pin digital 10
+#define SSpin 53    // Slave Select en pin digital 53
 
-SoftwareSerial ESPserial(2, 3); // RX | TX  => TX del ESP al pin 2 y RX del ESP al pin 3
+SoftwareSerial ESPserial(10,11); // RX | TX  => TX del ESP al pin 2 y RX del ESP al pin 3
 SoftwareSerial serialSIM800L(5,4); // TX | RX => TX del SIM al pin 5 y RX del SIM al pin 4
 RTC_DS3231 rtc;     // crea objeto del tipo RTC_DS3231
 File archivo;     // objeto archivo del tipo File
@@ -51,12 +51,14 @@ void setup()
       return;         // se sale del setup() para finalizar el programa
     }
   
-    Serial.println("inicializacion correcta del Modulo MicroSD");  // texto de inicializacion correcta
+    Serial.println("Inicializacion correcta del Modulo MicroSD");  // texto de inicializacion correcta
 
     if (! rtc.begin()) {       // si falla la inicializacion del modulo
       Serial.println("Modulo RTC no encontrado !");  // muestra mensaje de error
       while (1);         // bucle infinito que detiene ejecucion del programa
     }
+
+    Serial.println("Inicializacion correcta del Modulo RTC");  // texto de inicializacion correcta
 
     // funcion que permite establecer fecha y horario
     // al momento de la compilacion.
@@ -76,11 +78,8 @@ void loop()
     /***
      * El ESP8266 Servidor me va a pasar por comunicación serial un String grande, con el siguiente formato:
      * 
-     * 16:42:13.852 -> El cliente 192.168.4.2 ha enviado la siguiente informacion: 
-       16:42:13.926 -> Apiario: 11
-       16:42:13.926 -> Colmena: 12
-       16:42:13.966 -> Temperatura: 35.55
-       16:42:13.966 -> Humedad: 80.00
+     * 16:42:13.852 -> 11,12,35.55,100.00 
+     * El orden de los datos indica Apiario, Colmena, Temperatura, Humedad.
      */
   
     // listen for communication from the ESP8266 and then write it to the serial monitor
@@ -93,47 +92,6 @@ void loop()
       
       String informacion = ESPserial.readString(); // serial comunication: get info from ESP8266.
       Serial.println(informacion);
-      
-      /*if(informacion.indexOf("Apiario") > 0) 
-      {
-        Serial.println("Procesando Apiario...");        
-        start = informacion.indexOf("Apiario");
-        end = informacion.indexOf("\n",start);
-        apiario = informacion.substring(start,end); // De todo el String, me quedo con "Apiario: 12"
-        start = apiario.indexOf(": ") + 2;
-        apiario = apiario.substring(start,end); // Me quedo solo con "12"
-        apiario.trim(); // Elimino espacios en blanco
-      }
-      if(informacion.indexOf("Colmena") > 0) 
-      {
-        Serial.println("Procesando Colmena...");
-        start = informacion.indexOf("Colmena");
-        end = informacion.indexOf("\n",start);
-        colmena = informacion.substring(start,end); // De todo el String, me quedo con "Colmena: 13"
-        start = colmena.indexOf(": ") + 2;
-        colmena = colmena.substring(start,end); // colmena = 13
-        colmena.trim();
-      }
-      if(informacion.indexOf("Temperatura") > 0) 
-      {
-        Serial.println("Procesando Temperatura..."); 
-        start = informacion.indexOf("Temperatura");
-        end = informacion.indexOf("\n",start);
-        temperatura = informacion.substring(start,end); // De todo el String, me quedo con "Temperatura: 35.55"
-        start = temperatura.indexOf(": ") + 2;
-        temperatura = temperatura.substring(start,end); // temperatura = "35.55"
-        temperatura.trim();
-      }
-      if(informacion.indexOf("Humedad") > 0) 
-      {
-        Serial.println("Procesando Humedad...");
-        start = informacion.indexOf("Humedad");
-        end = informacion.indexOf("\n",start);
-        humedad = informacion.substring(start,end); // De todo el String, me quedo con "Humedad: 80.00"
-        start = humedad.indexOf(": ") + 2;
-        humedad = humedad.substring(start,end); // humedad = "80.00"
-        humedad.trim();
-      }*/
 
       if(informacion.indexOf(",") > 0) {
         int i1 = informacion.indexOf(","); // primer coma
@@ -159,14 +117,20 @@ void loop()
         Serial.println(temperatura);
         Serial.println(humedad);
         validarDatos();
-        //enviarDatos(); // Envio datos por GPRS  
       }
 
       //delay(5000); // Esto lo sacaría, porque congela el micro de Arduino, lo reemplazaría por millis().
     }
 }
 
- 
+/** 
+ *  Consulta la hora y busca en el archivo del Nodo Colmena si existe 
+ *  un dato de temperatura y humedad para esa hora y día. Si existe, se lo descarta, sino 
+ *  lo agrega al archivo y se lo envía por GPRS al Servidor.
+ *  
+ *  Nota: cada Nodo Colmena tiene su archivo. La primer fila del archivo es el día. Después se interpreta cada fila
+ *  restante como la hora del día. Por ejemplo, la fila 2 sería el horario 00:00. La fila 15 sería el horario 14:00.
+ */
 void validarDatos() {
   String nombre_archivo = colmena + ".txt";
   int filas = 0;  
@@ -206,8 +170,8 @@ void validarDatos() {
 
   // Seteo la fila del archivo donde ira el nuevo dato de tyh recibido.
   int fila_hora = int(now.hour()) + 2;
-  
-  if( filas == fila_hora ) return; // datos ya cargados
+
+  if( filas <= fila_hora ) { Serial.println("Ya existen datos del Nodo Colmena " + colmena + " para esta hora."); return;} // datos ya cargados
 
   // Si hay saltos en el archivo, por ej: si el último dato es a
   // las 05:00 y el hora actua es 10:00, entonces completo con
@@ -251,7 +215,7 @@ void respuesta(){
 
 
 /**
- * Envía datos por GPRS al Servidor web
+ * Envía datos por GPRS al Servidor web.
  * 
  */
 void enviarDatos() {

@@ -83,7 +83,7 @@ void loop()
       String informacion = ESPserial.readString(); // serial comunication: get info from ESP8266.
       Serial.println(informacion);
       
-      if(informacion.indexOf("Apiario") > 0) 
+      /*if(informacion.indexOf("Apiario") > 0) 
       {
         Serial.println("Procesando Apiario...");        
         start = informacion.indexOf("Apiario");
@@ -122,8 +122,22 @@ void loop()
         start = humedad.indexOf(": ") + 2;
         humedad = humedad.substring(start,end); // humedad = "80.00"
         humedad.trim();
-      }
+      }*/
 
+      if(informacion.indexOf(",") > 0) {
+        int i1 = informacion.indexOf(","); // primer coma
+        apiario = informacion.substring(0,i1);
+        apiario.trim();
+        int i2 = informacion.indexOf(",", i1 + 1);
+        colmena = informacion.substring(i1 + 1,i2);
+        colmena.trim();
+        int i3 = informacion.indexOf(",", i2 + 1);
+        temperatura = informacion.substring(i2+1, i3);
+        temperatura.trim();
+        int i4 = informacion.indexOf("\n", i3 + 1);
+        humedad = informacion.substring(i3+1, i4);
+        humedad.trim();
+      }
 
       if( apiario == "" && colmena == "" && temperatura == "" && humedad == "" ) {
         //Serial.println("El Paquete de datos recibido es incompleto.");
@@ -149,10 +163,11 @@ void loop()
 void respuesta(){
   while( serialSIM800L.available() ) // Mientras la comunicación está
   {
-    if( serialSIM800L.available() > 0 ) // Si se reciben datos (mayor)
+    if( serialSIM800L.available() > 0 ) // Si se reciben datos 
     {
-      //Serial.write(serialSIM800L.read()); // imprime lo que recibe en 
-      Serial.println(serialSIM800L.read());
+      //Serial.write(serialSIM800L.read()); // imprime lo que recibe  
+      //Serial.println(serialSIM800L.read());
+      Serial.write(char (serialSIM800L.read()));
     }
   }
   Serial.flush();
@@ -180,23 +195,25 @@ void enviarDatos() {
     serialSIM800L.println("AT"); // Envío En comando AT
     delay(1000); // Espero un momento por la respuesta
     respuesta();
+
+    // serialSIM800L.println("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\""); /* Connection type GPRS */
     
     /* Inicializamos comunicación */
-    serialSIM800L.println("AT+SAPBR=3,1,\"APN\",\"CMNET\""); // Envío En comando AT
+    serialSIM800L.println("AT+SAPBR=3,1,\"APN\",\"CMNET\""); // Envío comando AT // igprs.claro.com.ar
     delay(1000); // Espero un momento por la respuesta
     respuesta();
     /*********/
-    serialSIM800L.println("AT+SAPBR=1,1"); // Envío En comando AT
+    serialSIM800L.println("AT+SAPBR=1,1"); // Envío comando AT
     delay(1000); // Espero un momento por la respuesta
     respuesta();
     /*********/
 
     /* Nos comunicamos con el Servidor */
-    serialSIM800L.println("AT+HTTPINIT"); // Envío En comando AT
+    serialSIM800L.println("AT+HTTPINIT"); // Envío comando AT
     delay(1000); // Espero un momento por la respuesta
     respuesta();
     /*********/
-    serialSIM800L.println("AT+HTTPPARA=\"CID\",1"); // Envío En comando AT
+    serialSIM800L.println("AT+HTTPPARA=\"CID\",1"); // Envío comando AT
     delay(1000); // Espero un momento por la respuesta
     respuesta();
     /*********/

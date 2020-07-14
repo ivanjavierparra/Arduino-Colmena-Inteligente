@@ -1,3 +1,5 @@
-La única diferencia que hay entre los dos sketch es que la v2
-tiene el código más ordenado, al pasar código a funciones con nombre.
+sketch_sim800l_laravel_esp8266_rtcds3231: funciona, pero el código no está optimizado.
+sketch_sim800l_laravel_esp8266_rtcds3231_v2: funciona, con código ordenado.
+sketch_sim800l_laravel_esp8266_rtcds3231_optimizado: se acortó el código y se sacaron los Serial.
+sketch_probando_optimizar: trata de optimizar más el código usando char en vez de String. NO SE AHORRÓ MUCHO ESPACIO.
 

@@ -1,3 +1,6 @@
 nodo_cliente: usa librería HTTPClient y envía datos por GET al Nodo Servidor. Es el que estoy usando.
 nodo_cliente_2: usa librería HTTPClient y envía datos por POST al Nodo Servidor.
 sketch_esp8266_cliente_post_2: usa librería WifiClient y envía datos por POST al Nodo Servidor.
+nodo_cliente_con_confirmacion: implementa el protocolo de confirmación establecido
+en la tesis. Si recibe un OK desde el nodo servidor, entonces vuelve a dormir, sino, vuelve
+a enviar el dato.
